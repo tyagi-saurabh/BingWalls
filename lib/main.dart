@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import './body.dart';
 import 'package:wallpaperplugin/wallpaperplugin.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,21 +20,23 @@ import 'dart:convert';
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(statusBarColor: Colors.black));
-  runApp(MaterialApp(
-    home: BingWalls(),
-    builder: (context, widget) => ResponsiveWrapper.builder(
-        BouncingScrollWrapper.builder(context, widget),
-        maxWidth: 2340,
-        minWidth: 480,
-        defaultScale: true,
-        breakpoints: [
-          ResponsiveBreakpoint.autoScale(480, name: MOBILE),
-          ResponsiveBreakpoint.autoScale(800, name: TABLET),
-          ResponsiveBreakpoint.autoScale(1000, name: DESKTOP),
-        ],
-        background: Container(color: Color(0xFFF5F5F5))),
-    initialRoute: "/",
-  ));
+  runApp(
+    MaterialApp(
+      home: BingWalls(),
+      builder: (context, widget) => ResponsiveWrapper.builder(
+          BouncingScrollWrapper.builder(context, widget),
+          maxWidth: 2340,
+          minWidth: 480,
+          defaultScale: true,
+          breakpoints: [
+            ResponsiveBreakpoint.autoScale(480, name: MOBILE),
+            ResponsiveBreakpoint.autoScale(800, name: TABLET),
+            ResponsiveBreakpoint.autoScale(1000, name: DESKTOP),
+          ],
+          background: Container(color: Color(0xFFF5F5F5))),
+      initialRoute: "/",
+    ),
+  );
 }
 
 class BingWalls extends StatefulWidget {
@@ -104,53 +107,55 @@ class _BingWallsState extends State<BingWalls> {
           shape: CircleBorder(),
           children: [
             SpeedDialChild(
-                child: Icon(
-                  Icons.wallpaper,
-                  size: 30.0,
-                ),
-                backgroundColor: Colors.red,
-                label: 'Apply Wallpaper',
-                onTap: () async {
-                  if (await _checkAndGetPermission() != null) {
-                    Dio dio = Dio();
-                    final Directory appdirectory =
-                        await getExternalStorageDirectory();
-                    final Directory directory =
-                        await Directory(appdirectory.path + '/wallpapers')
-                            .create(recursive: true);
-                    final String dir = directory.path;
-                    final String localfile = '$dir/' + '$title.jpeg';
-                    try {
-                      await dio.download(url, localfile);
-                      setState(() {
-                        _localfile = localfile;
-                      });
-                      await Wallpaperplugin.setWallpaperWithCrop(
-                          localFile: _localfile);
-                    } on PlatformException catch (e) {
-                      Text('error: $e');
-                    }
-                  }
-                }),
-            SpeedDialChild(
-                child: Icon(
-                  Icons.share,
-                  size: 30.0,
-                ),
-                backgroundColor: Colors.blue,
-                label: 'Share Wallpaper',
-                onTap: () async {
+              child: Icon(
+                Icons.wallpaper,
+                size: 30.0,
+              ),
+              backgroundColor: Colors.red,
+              label: 'Apply Wallpaper',
+              onTap: () async {
+                if (await _checkAndGetPermission() != null) {
+                  Dio dio = Dio();
+                  final Directory appdirectory =
+                      await getExternalStorageDirectory();
+                  final Directory directory =
+                      await Directory(appdirectory.path + '/wallpapers')
+                          .create(recursive: true);
+                  final String dir = directory.path;
+                  final String localfile = '$dir/' + '$title.jpeg';
                   try {
-                    var request = await HttpClient().getUrl(Uri.parse(url));
-                    var response = await request.close();
-                    Uint8List bytes =
-                        await consolidateHttpClientResponseBytes(response);
-                    await Share.file('Shared Via Bing Walls', '$title.jpg',
-                        bytes, 'image/jpg');
-                  } catch (e) {
+                    await dio.download(url, localfile);
+                    setState(() {
+                      _localfile = localfile;
+                    });
+                    await Wallpaperplugin.setWallpaperWithCrop(
+                        localFile: _localfile);
+                  } on PlatformException catch (e) {
                     Text('error: $e');
                   }
-                }),
+                }
+              },
+            ),
+            SpeedDialChild(
+              child: Icon(
+                Icons.share,
+                size: 30.0,
+              ),
+              backgroundColor: Colors.blue,
+              label: 'Share Wallpaper',
+              onTap: () async {
+                try {
+                  var request = await HttpClient().getUrl(Uri.parse(url));
+                  var response = await request.close();
+                  Uint8List bytes =
+                      await consolidateHttpClientResponseBytes(response);
+                  await Share.file('Shared Via Bing Walls', '$title.jpg', bytes,
+                      'image/jpg');
+                } catch (e) {
+                  Text('error: $e');
+                }
+              },
+            ),
             SpeedDialChild(
               child: Icon(
                 Icons.info_outline,
@@ -173,40 +178,7 @@ class _BingWallsState extends State<BingWalls> {
         backgroundColor: Colors.black,
         body: url == null
             ? Center(child: CircularProgressIndicator())
-            : Stack(children: <Widget>[
-                Image.network(
-                  url,
-                  height: MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  fit: BoxFit.cover,
-                ),
-                Card(
-                  color: Colors.transparent,
-                  child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: ExpansionTile(
-                        trailing: Icon(
-                          Icons.expand_more,
-                          color: Colors.white,
-                          size: 30.0,
-                        ),
-                        title: Text(
-                          title,
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'OpenSans',
-                              fontSize: 30.0),
-                        ),
-                        children: <Widget>[
-                          Text(copyright,
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'OpenSans',
-                                  fontSize: 15.0))
-                        ],
-                      )),
-                ),
-              ]),
+            : Body(url: url, title: title, copyright: copyright),
       ),
     );
   }
