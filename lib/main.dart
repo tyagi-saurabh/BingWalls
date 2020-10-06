@@ -83,7 +83,8 @@ class _BingWallsState extends State<BingWalls> {
 
   @override
   void initState() {
-    this.getWallData();
+    super.initState();
+    getWallData();
     SystemChrome.setEnabledSystemUIOverlays([]);
   }
 

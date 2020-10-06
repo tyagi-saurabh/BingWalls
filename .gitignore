@@ -10,6 +10,7 @@
 .svn/
 *.jks
 **/android/key.properties
+*.gradle
 
 # IntelliJ related
 *.iml
