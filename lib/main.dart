@@ -17,6 +17,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'constants.dart';
+
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(statusBarColor: Colors.black));
@@ -46,12 +48,10 @@ class BingWalls extends StatefulWidget {
 
 class _BingWallsState extends State<BingWalls> {
   String _localfile;
-  static const String partAddress =
-      "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=";
   String completeAddress;
-  String url;
-  String title;
-  String copyright;
+  String _url;
+  String _title;
+  String _copyright;
 
   Future<String> getWallData() async {
     String currentLocale;
@@ -61,12 +61,12 @@ class _BingWallsState extends State<BingWalls> {
     http.Response response = await http.get(Uri.encodeFull(completeAddress),
         headers: {"Accept": "application/json"});
     this.setState(() {
-      url = 'http://www.bing.com' +
+      _url = 'http://www.bing.com' +
           json.decode(response.body)['images'][0]['url'];
-      title = json.decode(response.body)['images'][0]['title'];
-      copyright = json.decode(response.body)['images'][0]['copyright'];
+      _title = json.decode(response.body)['images'][0]['title'];
+      _copyright = json.decode(response.body)['images'][0]['copyright'];
     });
-    return url;
+    return _url;
   }
 
   static Future<bool> _checkAndGetPermission() async {
@@ -94,7 +94,7 @@ class _BingWallsState extends State<BingWalls> {
       child: Scaffold(
         floatingActionButton: SpeedDial(
           animatedIcon: AnimatedIcons.menu_close,
-          animatedIconTheme: IconThemeData(size: 30.0),
+          animatedIconTheme: IconThemeData(size: 30),
           // this is ignored if animatedIcon is non null
           // child: Icon(Icons.add),
           curve: Curves.bounceIn,
@@ -123,9 +123,9 @@ class _BingWallsState extends State<BingWalls> {
                       await Directory(appdirectory.path + '/wallpapers')
                           .create(recursive: true);
                   final String dir = directory.path;
-                  final String localfile = '$dir/' + '$title.jpeg';
+                  final String localfile = '$dir/' + '$_title.jpeg';
                   try {
-                    await dio.download(url, localfile);
+                    await dio.download(_url, localfile);
                     setState(() {
                       _localfile = localfile;
                     });
@@ -146,12 +146,12 @@ class _BingWallsState extends State<BingWalls> {
               label: 'Share Wallpaper',
               onTap: () async {
                 try {
-                  var request = await HttpClient().getUrl(Uri.parse(url));
+                  var request = await HttpClient().getUrl(Uri.parse(_url));
                   var response = await request.close();
                   Uint8List bytes =
                       await consolidateHttpClientResponseBytes(response);
-                  await Share.file('Shared Via Bing Walls', '$title.jpg', bytes,
-                      'image/jpg');
+                  await Share.file('Shared Via Bing Walls', '$_title.jpg',
+                      bytes, 'image/jpg');
                 } catch (e) {
                   Text('error: $e');
                 }
@@ -170,16 +170,16 @@ class _BingWallsState extends State<BingWalls> {
                 if (await canLaunch(privacyUrl)) {
                   await launch(privacyUrl);
                 } else {
-                  throw 'Could not launch $url';
+                  throw 'Could not launch $_url';
                 }
               },
             )
           ],
         ),
         backgroundColor: Colors.black,
-        body: url == null
+        body: _url == null
             ? Center(child: CircularProgressIndicator())
-            : Body(url: url, title: title, copyright: copyright),
+            : Body(url: _url, title: _title, copyright: _copyright),
       ),
     );
   }
