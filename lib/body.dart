@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'constants.dart';
 
 class Body extends StatelessWidget {
   const Body({
@@ -14,10 +15,6 @@ class Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var titleTextStyle =
-        TextStyle(color: Colors.white, fontFamily: 'OpenSans', fontSize: 30.0);
-    var copyrightTextStyle =
-        TextStyle(color: Colors.white, fontFamily: 'OpenSans', fontSize: 15.0);
     return Stack(
       children: <Widget>[
         Image.network(
@@ -27,8 +24,9 @@ class Body extends StatelessWidget {
           fit: BoxFit.cover,
         ),
         Card(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
           color: Colors.transparent,
           child: ExpansionTile(
             trailing: Icon(
@@ -38,12 +36,12 @@ class Body extends StatelessWidget {
             ),
             title: Text(
               title,
-              style: titleTextStyle,
+              style: ktitleTextStyle,
             ),
             children: <Widget>[
               Text(
                 copyright,
-                style: copyrightTextStyle,
+                style: kcopyrightTextStyle,
               )
             ],
           ),
