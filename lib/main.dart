@@ -1,8 +1,8 @@
+import 'package:BingWalls/services/fetch_wallpaper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'dart:io';
-import './body.dart';
+import './screens/body.dart';
 import 'package:wallpaperplugin/wallpaperplugin.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,12 +12,8 @@ import 'package:esys_flutter_share/esys_flutter_share.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:devicelocale/devicelocale.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
-import 'dart:convert';
-
-import 'constants.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -48,25 +44,18 @@ class BingWalls extends StatefulWidget {
 
 class _BingWallsState extends State<BingWalls> {
   String _localfile;
-  String completeAddress;
-  String _url;
-  String _title;
-  String _copyright;
+  String _fetchedUrl;
+  String _fetchedTitle;
+  String _fetchedCopyright;
 
-  Future<String> getWallData() async {
-    String currentLocale;
-    currentLocale = await Devicelocale.currentLocale;
-    final completeAddress = partAddress + currentLocale.toString();
-
-    http.Response response = await http.get(Uri.encodeFull(completeAddress),
-        headers: {"Accept": "application/json"});
-    this.setState(() {
-      _url = 'http://www.bing.com' +
-          json.decode(response.body)['images'][0]['url'];
-      _title = json.decode(response.body)['images'][0]['title'];
-      _copyright = json.decode(response.body)['images'][0]['copyright'];
+  void getWallpaper() async {
+    WallPaper wallPaper = WallPaper();
+    await wallPaper.getWallData();
+    setState(() {
+      _fetchedUrl = wallPaper.url;
+      _fetchedTitle = wallPaper.title;
+      _fetchedCopyright = wallPaper.copyright;
     });
-    return _url;
   }
 
   static Future<bool> _checkAndGetPermission() async {
@@ -84,7 +73,7 @@ class _BingWallsState extends State<BingWalls> {
   @override
   void initState() {
     super.initState();
-    getWallData();
+    getWallpaper();
     SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
@@ -123,9 +112,9 @@ class _BingWallsState extends State<BingWalls> {
                       await Directory(appdirectory.path + '/wallpapers')
                           .create(recursive: true);
                   final String dir = directory.path;
-                  final String localfile = '$dir/' + '$_title.jpeg';
+                  final String localfile = '$dir/' + '$_fetchedTitle.jpeg';
                   try {
-                    await dio.download(_url, localfile);
+                    await dio.download(_fetchedUrl, localfile);
                     setState(() {
                       _localfile = localfile;
                     });
@@ -146,12 +135,13 @@ class _BingWallsState extends State<BingWalls> {
               label: 'Share Wallpaper',
               onTap: () async {
                 try {
-                  var request = await HttpClient().getUrl(Uri.parse(_url));
+                  var request =
+                      await HttpClient().getUrl(Uri.parse(_fetchedUrl));
                   var response = await request.close();
                   Uint8List bytes =
                       await consolidateHttpClientResponseBytes(response);
-                  await Share.file('Shared Via Bing Walls', '$_title.jpg',
-                      bytes, 'image/jpg');
+                  await Share.file('Shared Via Bing Walls',
+                      '$_fetchedTitle.jpg', bytes, 'image/jpg');
                 } catch (e) {
                   Text('error: $e');
                 }
@@ -170,16 +160,19 @@ class _BingWallsState extends State<BingWalls> {
                 if (await canLaunch(privacyUrl)) {
                   await launch(privacyUrl);
                 } else {
-                  throw 'Could not launch $_url';
+                  throw 'Could not launch $_fetchedUrl';
                 }
               },
             )
           ],
         ),
         backgroundColor: Colors.black,
-        body: _url == null
+        body: _fetchedUrl == null
             ? Center(child: CircularProgressIndicator())
-            : Body(url: _url, title: _title, copyright: _copyright),
+            : Body(
+                url: _fetchedUrl,
+                title: _fetchedTitle,
+                copyright: _fetchedCopyright),
       ),
     );
   }
